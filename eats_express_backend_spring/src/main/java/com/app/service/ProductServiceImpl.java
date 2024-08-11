@@ -5,12 +5,10 @@ import java.util.stream.Collectors;
 
 import javax.transaction.Transactional;
 
-import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.app.dto.ApiResponse;
-import com.app.dto.ProductDto;
 import com.app.dto.ProductDtoWithId;
 import com.app.entities.Category;
 import com.app.entities.Product;
@@ -32,53 +30,29 @@ public class ProductServiceImpl implements ProductService {
 	@Autowired
 	private CategoryRepository categoryRepository;
 	
-	@Autowired
-	private ModelMapper mapper;
-	
 	@Override
-	public List<ProductDto> getAllProducts() {
+	public List<ProductDtoWithId> getAllProducts() {
 		return prodRepository.findAll()
 				.stream()
 				.map(prod-> 
-				mapper.map(prod, ProductDto.class))
+				DtoConverter(prod))
 				.collect(Collectors.toList());
 	}
 
 	@Override
 	public ApiResponse addNewProduct(ProductDtoWithId productDtoWithId) {
-		ProductDto productDto=new ProductDto();
-		productDto.setName(productDtoWithId.getName());
-		productDto.setPrice(productDtoWithId.getPrice());
-		productDto.setQuantity(productDtoWithId.getQuantity());
-		
-		Category category= categoryRepository.findById(productDtoWithId.getCategoryId()).get();
-		productDto.setChosenCategory(category);
-		User user = userRepository.findById(productDtoWithId.getUserId()).get();
-		productDto.setAddedBy(user);
-		
-		Product product=mapper.map(productDto, Product.class);
-		
+		Product product=ProductConverter( productDtoWithId);			
 		prodRepository.save(product);
 		return new ApiResponse("Product Added Successfully");
 	}
 
 	@Override
-	public ApiResponse updateProduct(Long id, ProductDtoWithId productDtoWithId) throws customException {
+	public ApiResponse updateProduct(Long id, ProductDtoWithId productDto) throws customException {
 		
-		if(prodRepository.existsById(id)) {
-			ProductDto productDto=new ProductDto();
-			productDto.setName(productDtoWithId.getName());
-			productDto.setPrice(productDtoWithId.getPrice());
-			productDto.setQuantity(productDtoWithId.getQuantity());
-			
-			Category category= categoryRepository.findById(productDtoWithId.getCategoryId()).get();
-			productDto.setChosenCategory(category);
-			User user = userRepository.findById(productDtoWithId.getUserId()).get();
-			productDto.setAddedBy(user);
-			
+		if(prodRepository.existsById(id)) {		
 			Product prod= prodRepository.findById(id).get();
-			prod.setAddedBy(productDto.getAddedBy());
-			prod.setChosenCategory(productDto.getChosenCategory());
+			prod.setAddedBy(userRepository.findById(productDto.getUserId()).get());
+			prod.setChosenCategory(categoryRepository.findById(productDto.getCategoryId()).get());
 			prod.setName(productDto.getName());
 			prod.setPrice(productDto.getPrice());
 			prod.setQuantity(prod.getQuantity());
@@ -97,5 +71,28 @@ public class ProductServiceImpl implements ProductService {
 		else
 			throw new customException("Could not found Product with Id : "+productId);
 	}
-
+	
+	private Product ProductConverter(ProductDtoWithId productDtoWithId) {
+		Product product=new Product();
+		product.setName(productDtoWithId.getName());
+		product.setPrice(productDtoWithId.getPrice());
+		product.setQuantity(productDtoWithId.getQuantity());
+		
+		Category category= categoryRepository.findById(productDtoWithId.getCategoryId()).get();
+		product.setChosenCategory(category);
+		User user = userRepository.findById(productDtoWithId.getUserId()).get();
+		product.setAddedBy(user);
+		return product;
+	}
+	
+	private ProductDtoWithId DtoConverter(Product product) {
+		ProductDtoWithId productDto=new ProductDtoWithId();
+		productDto.setName(product.getName());
+		productDto.setPrice(product.getPrice());
+		productDto.setQuantity(product.getQuantity());
+		productDto.setCategoryId(product.getChosenCategory().getId());
+		productDto.setUserId(product.getAddedBy().getUserId());
+		return productDto;
+	}
+	
 }

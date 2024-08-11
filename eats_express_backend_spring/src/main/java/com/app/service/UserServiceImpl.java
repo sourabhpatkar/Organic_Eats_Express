@@ -9,13 +9,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.app.dto.UserDto;
 import com.app.dto.ApiResponse;
 import com.app.dto.LoginDto;
+import com.app.dto.UserDtoWithAddress;
+import com.app.dto.UserDtoWithId;
 import com.app.entities.Address;
+import com.app.entities.Cart;
 import com.app.entities.User;
 import com.app.exception.customException;
 import com.app.repository.AddressRepository;
+import com.app.repository.CartRepository;
 import com.app.repository.UserRepository;
 
 @Service
@@ -26,29 +29,40 @@ public class UserServiceImpl implements UserService {
 	
 	@Autowired
 	private AddressRepository addressRepository;
+	
+	@Autowired
+	private CartRepository cartRepository;
 
 	@Autowired
 	private ModelMapper mapper;
 
 	@Override
-	public List<UserDto> getAllUsers() {
+	public List<UserDtoWithId> getAllUsers() {
 		return userRepository.findAll().stream().map(user -> 
-				mapper.map(user, UserDto.class))
+				DtoConverter(user))
 				.collect(Collectors.toList());
 
 	}
 
 	@Override
-	public ApiResponse addNewUser(UserDto newUser) {
-		User user = mapper.map(newUser, User.class);
+	public ApiResponse addNewUser(UserDtoWithAddress newUser) {
+		User user= new User();
+		user.setFirstName(newUser.getFirstName());
+		user.setLastName(newUser.getLastName());
+		user.setEmail(newUser.getEmail());
+		user.setPassword(newUser.getPassword());
+		user.setMobileNumber(newUser.getMobileNumber());
+		user.setAddress(newUser.getAddress());
+		user.setCart(new Cart());
 		userRepository.save(user);
 		return new ApiResponse("new user added");
 	}
 
 	@Override
-	public ApiResponse updateUser(Long id, UserDto userDto) throws customException {
+	public ApiResponse updateUser(Long id, UserDtoWithId newDto) throws customException {
 
 		if (userRepository.existsById(id)) {
+			User userDto = UserConverter(newDto);
 			Optional<User> optionalUser = userRepository.findById(id);
 			User userUpdate = optionalUser.get();
 			userUpdate.setFirstName(userDto.getFirstName());
@@ -76,11 +90,56 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public UserDto userLogin(LoginDto loginDto) throws customException{
+	public UserDtoWithId userLogin(LoginDto loginDto) throws customException{
 		User user= userRepository.findByEmailAndPassword(loginDto.getEmail(), loginDto.getPassword())
 				.orElseThrow(()->new customException("Invalid Email or Password"));
-		return mapper.map(user, UserDto.class);
+		return DtoConverter(user);
 	}
 	
+	private User UserConverter(UserDtoWithId newUser){
+		User user= new User();
+		user.setFirstName(newUser.getFirstName());
+		user.setLastName(newUser.getLastName());
+		user.setEmail(newUser.getEmail());
+		user.setPassword(newUser.getPassword());
+		user.setMobileNumber(newUser.getMobileNumber());
+		
+		user.setAddress(addressRepository.findById(newUser.getAddressId()).get());
+		Cart cart = cartRepository.findById(newUser.getCartId()).get();
+		if(cart==null){
+			cart = new Cart();
+		}
+		user.setCart(cart);
+		return user;
+	}
 	
+	private UserDtoWithId DtoConverter(User user) {
+		UserDtoWithId userDto= new UserDtoWithId();
+		userDto.setFirstName(user.getFirstName());
+		userDto.setLastName(user.getLastName());
+		userDto.setEmail(user.getEmail());
+		userDto.setPassword(user.getPassword());
+		userDto.setMobileNumber(user.getMobileNumber());
+		
+		userDto.setAddressId(user.getAddress().getAddressId());
+		userDto.setCartId(user.getCart().getCartId());
+		return userDto;
+	}
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

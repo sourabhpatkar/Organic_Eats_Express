@@ -8,18 +8,14 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
-import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
-import com.app.dto.AddressDTO;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Entity
 @Table(name = "users")
@@ -54,7 +50,7 @@ public class User {
 	private Address address;
 	
 	@JsonIgnore
-	@OneToOne(mappedBy = "user", cascade = {CascadeType.REMOVE, CascadeType.PERSIST,CascadeType.MERGE}, orphanRemoval = true)
+	@OneToOne( cascade = {CascadeType.REMOVE, CascadeType.PERSIST,CascadeType.MERGE}, orphanRemoval = true)
 	private Cart cart;
 
 

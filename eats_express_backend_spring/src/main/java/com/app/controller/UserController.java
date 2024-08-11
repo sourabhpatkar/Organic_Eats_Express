@@ -1,7 +1,5 @@
 package com.app.controller;
 
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,11 +12,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.app.dto.UserDto;
 import com.app.dto.ApiResponse;
 import com.app.dto.LoginDto;
+import com.app.dto.UserDtoWithAddress;
+import com.app.dto.UserDtoWithId;
 import com.app.exception.customException;
-import com.app.service.UserService;
 import com.app.service.UserService;
 
 @RestController
@@ -35,16 +33,14 @@ public class UserController {
 	@GetMapping
 	public ResponseEntity<?> getAllUser(){
 		try {
-		//return ResponseEntity.status(HttpStatus.OK).body(adminservice.getAllAdmins());
-			List<UserDto> listUser=userService.getAllUsers();
-			return ResponseEntity.ok(listUser);
+			return ResponseEntity.ok(userService.getAllUsers());
 		}catch(RuntimeException e){
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse(e.getMessage()));
 		}
 	}
 	
 	@PostMapping
-	public ResponseEntity<?> addNewUser(@RequestBody UserDto userDto){
+	public ResponseEntity<?> addNewUser(@RequestBody UserDtoWithAddress userDto){
 		try {
 			System.out.println("in user Post method-------");
 			return ResponseEntity.ok(userService.addNewUser(userDto));
@@ -55,9 +51,9 @@ public class UserController {
 	}
 	
 	@PutMapping("/{id}")
-	public ResponseEntity<?> updateUser(@PathVariable Long id,@RequestBody UserDto userDto){
+	public ResponseEntity<?> updateUser(@PathVariable Long id,@RequestBody UserDtoWithId newDto){
 		try {
-			return ResponseEntity.ok(userService.updateUser(id,userDto));
+			return ResponseEntity.ok(userService.updateUser(id,newDto));
 		}catch(customException e) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST)
 					.body(new ApiResponse(e.getMessage()));
